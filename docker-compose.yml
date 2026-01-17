@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:17.7
+    container_name: postgres17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mi_bd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backup:/backup
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: atp-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres          # <-- IMPORTANTE: usa el nombre del servicio, no localhost
+      DB_PORT: "5432"
+      DB_NAME: mi_bd
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8501:8501"
+  
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      # URL pública (ajústala si luego lo expones diferente)
+      N8N_HOST: "localhost"
+      N8N_PORT: 5678
+      N8N_PROTOCOL: "http"
+
+      # Para generar URLs correctas en correos, etc (puedes dejarlo así en local)
+      WEBHOOK_URL: "http://localhost:5678/"
+
+      # BD interna de n8n (EN LA MISMA INSTANCIA DE POSTGRES, PERO OTRA DB)
+      DB_TYPE: "postgresdb"
+      DB_POSTGRESDB_HOST: "postgres"
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: "n8n"
+      DB_POSTGRESDB_USER: "postgres"
+      DB_POSTGRESDB_PASSWORD: "postgres"
+
+      # Timezone
+      GENERIC_TIMEZONE: "Europe/Madrid"
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  pgdata:
+  n8n_data:

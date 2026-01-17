@@ -1,0 +1,587 @@
+{
+  "name": "ATP - Generacion de avisos",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "sender": "juanruizrodrig@gmail.com"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "92e0a575-66c5-4fd8-9538-e021c189d3e9",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6W9zN8R9QiEkdDsF",
+          "name": "Gmail jruizf.unex"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a29aa6f3-0a00-4633-a609-e0cfef1f0092",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente especializado en extracción de datos estructurados desde documentos en texto plano (por ejemplo, texto obtenido de un PDF mediante OCR).\n\nVARIABLE DE ENTRADA:\n \nTEXTO:\n{{ $json.text }}\n\nDESCRIPCIÓN DE VARIABLE\n\nTEXTO: contiene el contenido textual extraído de un PDF. Puede incluir saltos de línea irregulares, errores de OCR, mayúsculas inconsistentes y ruido visual.\n\nOBJETIVO\n\nTu tarea es ANALIZAR el contenido de `TEXTO`, localizar información relevante y RELLENAR la estructura definida en el FORMATO DE SALIDA con los valores encontrados. Cuando un dato no esté disponible de forma clara y verificable en `TEXTO`, debes dejar el campo vacío (`\"\"`).\n\nFORMATO DE SALIDA (OBLIGATORIO)\n\nDebes devolver ÚNICAMENTE un JSON con la estructura exacta definida en FORMATO DE SALIDA. Un ejemplo de la forma final es:\n\n{\n  \"General\": {\n    \"Tipo\": \"\",\n    \"Responsable\": \"\",\n    \"Expediente\": \"\",\n    \"Aseguradora\": \"\",\n    \"Agencia\": \"\",\n    \"Fecha_del_aviso\": \"\",\n    \"Fecha_del_siniestro\": \"\",\n    \"Fecha_de_efecto\": \"\",\n    \"Lugar_a_peritar\": \"\"\n  },\n  \"Asegurado\": {\n    \"Nombre\": \"\",\n    \"Apellidos\": \"\",\n    \"Direccion\": \"\",\n    \"Codigo postal\": \"\",\n    \"Ciudad\": \"\",\n    \"Telefonos\": \"\",\n    \"Poliza\": \"\",\n    \"Cobertura_Garantia\": \"\",\n    \"Bienes_asegurados\": \"\",\n    \"Otros_Riesgo\": \"\"\n  },\n  \"Contrario\": {\n    \"Direccion\": \"\",\n    \"Telefonos\": \"\",\n    \"Asegurador\": \"\",\n    \"Poliza\": \"\",\n    \"Vehiculo\": \"\"\n  },\n  \"Taller_Reparador\": {\n    \"Encargado\": \"\",\n    \"Domicilio\": \"\",\n    \"Telefonos\": \"\",\n    \"Fax\": \"\"\n  }\n}\n\nEJEMPLOS TIPO DE LOS VALORES A BUSCAR:\n- \"Responsable\": Buscar el codigo acompañando a REFERENCIA MGS ...\n\n\nReglas del JSON:\n- Respeta exactamente los nombres, jerarquías y claves del `FORMATO DE SALIDA`.\n- Devuelve todas las claves incluso si el valor es vacío.\n- No incluyas texto fuera del JSON.\n- No añadas comentarios ni explicaciones.\n\nREGLAS DE EXTRACCIÓN\n\n1. Correspondencia de campos\n   - Cada clave del `FORMATO DE SALIDA` corresponde a un concepto en `TEXTO`. Debes encontrar su valor mediante coincidencia flexible (tolerando mayúsculas, acentos, errores OCR y variaciones menores).\n   - Si no existe en `TEXTO` un dato claro y verificable, el campo debe quedar como `\"\"`.\n\n2. Fechas\n   - Conserva el formato original encontrado en `TEXTO` si es correcto.  \n   - Si aparece como DD/MM/AAAA o DD-MM-AAAA, conviértela a AAAA-MM-DD.\n   - Si hay dudas o múltiples fechas sin etiqueta clara, no asumas: deja el campo vacío.\n\n3. Direcciones y nombres\n   - Une líneas cortadas por OCR en una sola cadena fluida.\n   - Respeta tildes y mayúsculas cuando existan.\n\n4. Teléfonos, pólizas y códigos\n   - Extrae números limpios sin espacios innecesarios.\n   - Si existen varios valores claramente asociados, sepáralos con comas.\n\n5. Campos del contrario y taller\n   - Muchos documentos dejan estas secciones vacías; si no hay datos explícitos, deja `\"\"` en cada campo.\n\n6. Coherencia\n   - No inventes datos.  \n   - No infieras información no explícita.  \n   - No completes campos con textos genéricos como “N/A”.\n\nTU RESPUESTA\n\n- Tu única salida debe ser el JSON final completamente rellenado o con campos vacíos donde falte información.\n- No incluyas notas, comentarios, explicaciones ni referencias al proceso de extracción.\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        480,
+        0
+      ],
+      "id": "241a9110-dd0e-4fcb-9193-58abd405ba02",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        176
+      ],
+      "id": "fe17ba4e-c4e0-4327-9359-9f5cfd407230",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7r8nki0pvHunJtpi",
+          "name": "gemini jrr.stla"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"General\": {\n    \"Tipo\": \"\",\n    \"Responsable\": \"\",\n    \"Expediente\": \"\",\n    \"Aseguradora\": \"\",\n    \"Agencia\": \"\",\n    \"Fecha_del_aviso\": \"\",\n    \"Fecha_del_siniestro\": \"\",\n    \"Fecha_de_efecto\": \"\",\n    \"Lugar_a_peritar\": \"\"\n  },\n  \"Asegurado\": {\n    \"Nombre\": \"\",\n    \"Apellidos\": \"\",\n    \"Direccion\": \"\",\n    \"Codigo postal\": \"\",\n    \"Ciudad\": \"\",\n    \"Telefonos\": \"\",\n    \"Poliza\": \"\",\n    \"Cobertura_Garantia\": \"\",\n    \"Bienes_asegurados\": \"\",\n    \"Otros_Riesgo\": \"\"\n  },\n  \"Contrario\": {\n    \"Direccion\": \"\",\n    \"Telefonos\": \"\",\n    \"Asegurador\": \"\",\n    \"Poliza\": \"\",\n    \"Vehiculo\": \"\"\n  },\n  \"Taller_Reparador\": {\n    \"Encargado\": \"\",\n    \"Domicilio\": \"\",\n    \"Telefonos\": \"\",\n    \"Fax\": \"\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        176
+      ],
+      "id": "e7d17723-6aa7-447b-9462-134edd0ac61c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4394322787105800661"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        -272
+      ],
+      "id": "4f4227f8-9a4e-4cdc-a27d-eca339184767",
+      "name": "Add label to message",
+      "webhookId": "e93173e1-be22-4425-aaaa-81bba541619e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6W9zN8R9QiEkdDsF",
+          "name": "Gmail jruizf.unex"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sendTo": "jruizf.unex@gmail.com",
+        "subject": "={{ $('Append row in sheet').item.json.Expediente }} - AVISO GENERADO",
+        "message": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Notificación de Registro</title>\n<style>\n  body { font-family: Arial, sans-serif; color: #333; }\n  table { width: 100%; border-collapse: collapse; margin-top: 15px; }\n  th, td { padding: 8px 10px; border: 1px solid #ccc; text-align: left; }\n  th { background-color: #f0f0f0; font-weight: bold; }\n</style>\n</head>\n<body>\n  <p>Buenos días,</p>\n\n  <p>Le informamos que se ha generado correctamente el siguiente registro asociado al expediente <strong>32904531</strong>:</p>\n\n  <table>\n    <tr>\n      <th>Campo</th>\n      <th>Valor</th>\n    </tr>\n    <tr>\n      <td>Tipo</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Tipo }}</td>\n    </tr>\n    <tr>\n      <td>Responsable</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Responsable }}</td>\n    </tr>\n    <tr>\n      <td>Aseguradora</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Aseguradora }}</td>\n    </tr>\n    <tr>\n      <td>Agencia</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Agencia }}</td>\n    </tr>\n    <tr>\n      <td>Fecha del siniestro</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Fecha_del_siniestro }}</td>\n    </tr>\n    <tr>\n      <td>Lugar a peritar</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.General.Lugar_a_peritar }}</td>\n    </tr>\n    <tr>\n      <td>Asegurado</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.Asegurado.Nombre }}</td>\n    </tr>\n    <tr>\n      <td>Dirección</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.Asegurado.Direccion }}</td>\n    </tr>\n    <tr>\n      <td>Teléfonos</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.Asegurado.Telefonos }}</td>\n    </tr>\n    <tr>\n      <td>Póliza</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.Asegurado.Poliza }}</td>\n    </tr>\n    <tr>\n      <td>Cobertura / Garantía</td>\n      <td>{{ $('Basic LLM Chain').item.json.output.Asegurado.Cobertura_Garantia }}</td>\n    </tr>\n  </table>\n\n  <p>Quedamos a su disposición para cualquier aclaración adicional.</p>\n\n  <p>Un saludo.</p>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        -272
+      ],
+      "id": "e478d0b1-9d8d-4d12-8f50-d6f1ac86dbae",
+      "name": "Send a message",
+      "webhookId": "8b691926-ae50-48fc-9cb6-0313d848af6f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6W9zN8R9QiEkdDsF",
+          "name": "Gmail jruizf.unex"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1qzSjtyGs1ldbbzrl3tfRcyvaxF4SSzEO6XezABlSb7c",
+          "mode": "list",
+          "cachedResultName": "BBDD Avisos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qzSjtyGs1ldbbzrl3tfRcyvaxF4SSzEO6XezABlSb7c/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 917920963,
+          "mode": "list",
+          "cachedResultName": "new",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qzSjtyGs1ldbbzrl3tfRcyvaxF4SSzEO6XezABlSb7c/edit#gid=917920963"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "expediente": "={{ $json.output.General.Expediente }}",
+            "aseguradora": "={{ $json.output.General.Aseguradora }}",
+            "fecha_aviso": "={{ $json.output.General.Fecha_del_aviso }}",
+            "fecha_siniestro": "={{ $json.output.General.Fecha_del_siniestro }}",
+            "fecha_efecto": "={{ $json.output.General.Fecha_de_efecto }}",
+            "nombre_asegurado": "={{ $json.output.Asegurado.Nombre }}",
+            "direccion": "={{ $json.output.Asegurado.Direccion }}",
+            "telefonos": "={{ $json.output.Asegurado.Telefonos }}",
+            "apellidos": "={{ $json.output.Asegurado.Apellidos }}",
+            "cp": "={{ $json.output.Asegurado['Codigo postal'] }}",
+            "ciudad": "={{ $json.output.Asegurado.Ciudad }}",
+            "poliza": "={{ $json.output.Asegurado.Poliza }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "num_aviso",
+              "displayName": "num_aviso",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expediente",
+              "displayName": "expediente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "aseguradora",
+              "displayName": "aseguradora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_aviso",
+              "displayName": "fecha_aviso",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_siniestro",
+              "displayName": "fecha_siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_efecto",
+              "displayName": "fecha_efecto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre_asegurado",
+              "displayName": "nombre_asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "apellidos",
+              "displayName": "apellidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "direccion",
+              "displayName": "direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cp",
+              "displayName": "cp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ciudad",
+              "displayName": "ciudad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telefonos",
+              "displayName": "telefonos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poliza",
+              "displayName": "poliza",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "responsable",
+              "displayName": "responsable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "observaciones",
+              "displayName": "observaciones",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        0
+      ],
+      "id": "db93dcc0-01ce-46d5-a3a1-3b97c40a6e23",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JC999hB6n22gll2J",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.main_pending (\n  expediente,\n  aseguradora,\n  fecha_aviso,\n  fecha_siniestro,\n  fecha_efecto,\n  nombre_asegurado,\n  apellidos,\n  direccion,\n  cp,\n  ciudad,\n  telefonos,\n  poliza,\n  creation_state\n)\nVALUES (\n  {{$json.expediente || null}},\n  {{$json.aseguradora ? \"'\" + $json.aseguradora + \"'\" : null}},\n  {{$json.fecha_aviso ? \"'\" + $json.fecha_aviso + \"'\" : null}},\n  {{$json.fecha_siniestro ? \"'\" + $json.fecha_siniestro + \"'\" : null}},\n  {{$json.fecha_efecto ? \"'\" + $json.fecha_efecto + \"'\" : null}},\n  {{$json.nombre_asegurado ? \"'\" + $json.nombre_asegurado + \"'\" : null}},\n  {{$json.apellidos ? \"'\" + $json.apellidos + \"'\" : null}},\n  {{$json.direccion ? \"'\" + $json.direccion + \"'\" : null}},\n  {{$json.cp ? \"'\" + $json.cp + \"'\" : null}},\n  {{$json.ciudad ? \"'\" + $json.ciudad + \"'\" : null}},\n  {{$json.telefonos ? \"'\" + $json.telefonos + \"'\" : null}},\n  {{$json.poliza ? \"'\" + $json.poliza + \"'\" : null}},\n  'auto_new'\n)\nRETURNING id;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "591d0c32-0981-494b-a75c-d21d174803a6",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "9blRvSW8AZY6ozXo",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Append row in sheet": [
+      {
+        "json": {
+          "expediente": "32904531",
+          "aseguradora": "MGS",
+          "fecha_aviso": "",
+          "fecha_siniestro": "2024-12-11",
+          "fecha_efecto": "2022-03-01",
+          "nombre_asegurado": "ANTONIO EDUARDO",
+          "direccion": "LG FINCA VALDEGAFEÑO S/N",
+          "telefonos": "635613575,633799016",
+          "apellidos": "ESTEVEZ CALDERITA",
+          "cp": "06510",
+          "ciudad": "ALBURQUERQUE",
+          "poliza": "32019249"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19b4a5b27ebbb66b",
+          "threadId": "19b4a5b27ebbb66b",
+          "labelIds": [
+            "Label_4394322787105800661",
+            "IMPORTANT",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+          ],
+          "sizeEstimate": 22523,
+          "headers": {
+            "delivered-to": "Delivered-To: jruizf.unex@gmail.com",
+            "received": "Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])\r\n        by mx.google.com with SMTPS id 2adb3069b0e04-59a132c9095sor2195297e87.3.2025.12.23.00.37.26\r\n        for <jruizf.unex@gmail.com>\r\n        (Google Transport Security);\r\n        Tue, 23 Dec 2025 00:37:26 -0800 (PST)",
+            "x-received": "X-Received: by 2002:a05:6512:2241:b0:595:7d0c:99dc with SMTP id\r\n 2adb3069b0e04-59a17d71f94mr5156465e87.11.1766479045462; Tue, 23 Dec 2025\r\n 00:37:25 -0800 (PST)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1766479046; cv=none;\r\n        d=google.com; s=arc-20240605;\r\n        b=UlIy1X73z9hWZVNt8/yx+OK7X6N2xMxnSHCyxJPaqnooFi+kMWSujGmOzqzZXct3Uk\r\n         22lEmm8SzaT5+nFfqsHpSZWrBV0jw3kQEX4cOG/g3BMRVW8rtOijn7iwuejRhF9NxdUM\r\n         oRPCwKTaAcAyKAyizME5hDewVPn+V0s2RIE57K6aTuUbaFzbcq20qYm6FWoh12c2/qfu\r\n         dXKNs75Np7xBFTBllRKoBBlWiMBLGL9yLnr7aKOnqVXP1yl6GXmU0rTezQskCb594Sf9\r\n         KWc9/EKwCXyRVbmqVDxmSJMSpynCNk1PKHI3cKtPYbA2hWeCQbWxq608/RQIm8aA8GrD\r\n         hmwQ==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=WeJj3hw+8CuvPmm8FcCivKupvdtJ+w0gqVogknyRsGk=;\r\n        fh=hTDaFWquunHW6FnfMdkD8V7YyjEJ+lOdz+9CrcXspTk=;\r\n        b=QEuSUpY+6iNGMzt69kyh0c0hM/aqz4xw+8piWirH6CJRpodrobJQpgFjTxtoEp7kaM\r\n         jB/BKTkWLH9kTx5C6THjTMv2wv0m6/x1AM2AvtyqU6k3jyNMoZiOvtZYO8ZpCgEvhd+K\r\n         SI0voRl3JdIYVbqSP/hzWL7eHMkccqayp19vYhUsEMkRTtHzyxwTPeW7IopvYiWwoyMq\r\n         HLdl4OM25CB5KFaCusRvh1qZKAZhzUKsgOgOWpw6dJet56srPPcksZqiPSPE99brzflN\r\n         3Gjduf+M6dsbZKWcJAoBayybIAClcblkj4FdGnNPf1fgG+5qdpl7g6obAWBiQuECkNtw\r\n         cM5Q==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20230601 header.b=cVKXJKSS;\r\n       spf=pass (google.com: domain of juanruizrodrig@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=juanruizrodrig@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "return-path": "Return-Path: <juanruizrodrig@gmail.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of juanruizrodrig@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20230601 header.b=cVKXJKSS;\r\n       spf=pass (google.com: domain of juanruizrodrig@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=juanruizrodrig@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20230601; t=1766479046; x=1767083846; dara=google.com;\r\n        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject\r\n         :date:message-id:reply-to;\r\n        bh=WeJj3hw+8CuvPmm8FcCivKupvdtJ+w0gqVogknyRsGk=;\r\n        b=cVKXJKSSfMhgR+N/ZV/OrFU6q26vQC3StDhrHEVKBbp1dRSyqwOYISeJsfTF5lOmAC\r\n         nGCvAMloQE0hvqa858UUWlqoxiFQYdRd7XY8edW/TYUEF2CgrrTPtRPM1kMkwi6DPqAB\r\n         8El0ymenahbuPx5pZQ74iHz02Z+AuDhIbzIBi53XBfjFcD01Q6wIHwMRr69B3e1VOT5V\r\n         jT4YV2oKOLGOmxyDTJ4Kf1QZd3f4xj65C+wuvqXy19ZxKvgMUsFiZHtw375IXc+8kTct\r\n         tDtXyekLZ7opOuPaHviO2zB9Ba1LMZgc7sHwetRkJjMr/8/ifV3Sqrnj7eykq4o2pMcR\r\n         vi6w==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20230601; t=1766479046; x=1767083846;\r\n        h=to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;\r\n        bh=WeJj3hw+8CuvPmm8FcCivKupvdtJ+w0gqVogknyRsGk=;\r\n        b=jyNphQ5eL0vPYvpH65WuA2Riqf2xw6SU6LPfM4yb7ZSPrE1/L6oW+J/4GHYmOxGbZD\r\n         vj7Hv5u2GadgwUM4t0v8nM8C05ZvtwOH5eSMtpfySDPDT/2qx0+9M654V1es1sMCzPW1\r\n         j1LdAGbQBLg45WfdKD/jGiZswWAUMEvYLc7+INGj5wb6z8J6ko1kj8skAERtpckCMbHa\r\n         TfuxN4/Q8mRN/UQonrq3lRFFDWCy2dRvxaNWzbcZ7hncjE1+q7x3HulLc+Bs1PQYP1uJ\r\n         /crcLMWK1hrApqNFbCQiKem1QMWGwvyr0UkFuhyBUE9sr8C6bNyeEwH+v5vQrrqsz781\r\n         /Lhg==",
+            "x-gm-message-state": "X-Gm-Message-State: AOJu0YxyTYjUroSCtnRGocyEW37xkQybiqg8LJ+F15scLC82wgfLMhI0\r\n\tK/emwETFrI/OyUKQ8K4Soi9YGt/MpcAB+PhfbGXkgRQG3Ez+HLYIzPTjqi5dd84uPEi5BJcogJb\r\n\t4MEKyX1MJBbEvM8seaXckA08CO3VdWNDSLw==",
+            "x-gm-gg": "X-Gm-Gg: AY/fxX6bOAiDG3QHqjZmQOnQM/od7p/aKEmkhk8L7xDK7a7lRaBNl/Y0jsfy7f0WWpE\r\n\taGT8G587PKpSMLpXcNnFJNp9vpUr2sDKHlb+NhUJgzWPLrZ4BknteYBp2lmxurzbx4SVvcw3wg9\r\n\tFnkBmrhmWFxH12TCNuLrsS8+T7q8Avo+HDacZVa4HBTX0ttk7j0IFaKiVpfL8MhUFUF4VlHevfH\r\n\tjFNv1yNHiBtFrnwWv7lY149yNxv0MT5wuS7u64z2ehGEHm/hCKsGeyjev0UUox7NLa1QWQlnwQD\r\n\t48sMroL08/LmY0p5j50iKUbE0PiU",
+            "x-google-smtp-source": "X-Google-Smtp-Source: AGHT+IHG2S9/Wv/XQJbsI45FvHMfdCq+m/MSDWnQY0FB1JD1NIDCxl2n1g5/wohTNUiVYzWxDDjmYAbcZvQqncltUsc=",
+            "mime-version": "MIME-Version: 1.0",
+            "from": "From: =?UTF-8?Q?Juan_Ruiz_Rodr=C3=ADguez?= <juanruizrodrig@gmail.com>",
+            "date": "Date: Tue, 23 Dec 2025 09:37:13 +0100",
+            "x-gm-features": "X-Gm-Features: AQt7F2oOvScEfIs1jWkCzxvkqT6AMuOt03_4Bn2ch1qX6JH6f9VVcgemowDaR_g",
+            "message-id": "Message-ID: <CAMainUeUJN-6VH0VDmE+Kjo3pkDKstvOfg6-HqMWeWFmoxrszw@mail.gmail.com>",
+            "subject": "Subject: =?UTF-8?Q?Nueva_peritaci=C3=B3n?=",
+            "to": "To: jruizf.unex@gmail.com",
+            "content-type": "Content-Type: multipart/mixed; boundary=\"000000000000022d7406469a74aa\""
+          },
+          "html": "<div dir=\"ltr\"><div><br clear=\"all\"></div><div><br></div><div><div dir=\"ltr\" class=\"gmail_signature\" data-smartmail=\"gmail_signature\"><div dir=\"ltr\"><b><font color=\"#666666\" size=\"4\">Juan Ruiz Rodríguez</font></b><div><font color=\"#666666\" size=\"4\"><b><br></b></font><div><div><font color=\"#666666\"><b>Contact info:</b></font></div><div><font color=\"#666666\">+34 </font><font color=\"#0000ff\">667278733 </font></div><div><span style=\"color:rgb(102,102,102)\">Madrid (Spain)</span></div><div><font color=\"#666666\"><u><a href=\"mailto:juanruizrodrig@gmail.com\" target=\"_blank\">juanruizrodrig@gmail.com</a></u></font></div><div><font color=\"#666666\"><a href=\"https://www.linkedin.com/in/juanruizrguez/\" target=\"_blank\">LinkedIn</a><br></font></div><div><font color=\"#666666\"><br></font></div><div><font color=\"#666666\"><br></font></div></div></div></div></div></div></div>\n",
+          "text": "*Juan Ruiz Rodríguez*\n\n*Contact info:*\n+34 667278733\nMadrid (Spain)\n*juanruizrodrig@gmail.com <juanruizrodrig@gmail.com>*\nLinkedIn <https://www.linkedin.com/in/juanruizrguez/>\n",
+          "textAsHtml": "<p>*Juan Ruiz Rodr&iacute;guez*</p><p>*Contact info:*<br/>+34 667278733<br/>Madrid (Spain)<br/>*juanruizrodrig@gmail.com &lt;<a href=\"mailto:juanruizrodrig@gmail.com\">juanruizrodrig@gmail.com</a>&gt;*<br/>LinkedIn &lt;<a href=\"https://www.linkedin.com/in/juanruizrguez/\">https://www.linkedin.com/in/juanruizrguez/</a>&gt;</p>",
+          "subject": "Nueva peritación",
+          "date": "2025-12-23T08:37:13.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "jruizf.unex@gmail.com",
+                "name": ""
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><a href=\"mailto:jruizf.unex@gmail.com\" class=\"mp_address_email\">jruizf.unex@gmail.com</a></span>",
+            "text": "jruizf.unex@gmail.com"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "juanruizrodrig@gmail.com",
+                "name": "Juan Ruiz Rodríguez"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Juan Ruiz Rodr&#xED;guez</span> &lt;<a href=\"mailto:juanruizrodrig@gmail.com\" class=\"mp_address_email\">juanruizrodrig@gmail.com</a>&gt;</span>",
+            "text": "\"Juan Ruiz Rodríguez\" <juanruizrodrig@gmail.com>"
+          },
+          "messageId": "<CAMainUeUJN-6VH0VDmE+Kjo3pkDKstvOfg6-HqMWeWFmoxrszw@mail.gmail.com>"
+        },
+        "binary": {
+          "attachment_0": {
+            "mimeType": "application/pdf",
+            "fileType": "pdf",
+            "fileExtension": "PDF",
+            "data": "filesystem-v2",
+            "fileName": "AVISO.PDF",
+            "id": "filesystem-v2:workflows/mU0gzxModgMwsbXbHkSmZ/executions/2/binary_data/52d3a1cd-05cc-4f6e-b2f5-260f16f5a359",
+            "fileSize": "11.1 kB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "0a3e18c0-e93c-403b-a757-8e8359c78551",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ba4b37df4e5a7437b6a283479ab978a8ddd5d9b054f1dc90c66d966aec60c776"
+  },
+  "id": "mU0gzxModgMwsbXbHkSmZ",
+  "tags": []
+}
